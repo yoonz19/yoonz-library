@@ -266,16 +266,26 @@ function renderStats() {
 }
 
 function getFiltered() {
-  const q = document.getElementById('search').value.toLowerCase();
-  let list = allBooks;
-  if (currentFilter === 'owned') list = list.filter(b => b.owned === 'Y');
-  else if (currentFilter === 'read') list = list.filter(b => b.reading === '완독');
-  else if (currentFilter === 'unread') list = list.filter(b => !b.reading);
-  if (q) list = list.filter(b => (b.title||'').toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q) || (b.publisher||'').toLowerCase().includes(q));
-  const {key, asc} = currentSort;
-  list.sort((a,b) => {
-    let va = a[key]||'', vb = b[key]||'';
+  var searchEl = document.getElementById('search');
+  var q = searchEl ? searchEl.value.toLowerCase().trim() : '';
+  var list = allBooks.slice();
+  if (currentFilter === 'owned') list = list.filter(function(b){ return b.owned === 'Y'; });
+  else if (currentFilter === 'read') list = list.filter(function(b){ return b.reading === '완독'; });
+  else if (currentFilter === 'unread') list = list.filter(function(b){ return !b.reading; });
+  if (q) {
+    list = list.filter(function(b){
+      return String(b.title||'').toLowerCase().indexOf(q) !== -1 ||
+             String(b.author||'').toLowerCase().indexOf(q) !== -1 ||
+             String(b.publisher||'').toLowerCase().indexOf(q) !== -1 ||
+             String(b.note||'').toLowerCase().indexOf(q) !== -1;
+    });
+  }
+  var key = currentSort.key;
+  var asc = currentSort.asc;
+  list.sort(function(a,b){
+    var va = a[key], vb = b[key];
     if (key === 'num') { va = parseInt(va)||0; vb = parseInt(vb)||0; }
+    else { va = String(va||'').toLowerCase(); vb = String(vb||'').toLowerCase(); }
     if (va < vb) return asc ? -1 : 1;
     if (va > vb) return asc ? 1 : -1;
     return 0;
