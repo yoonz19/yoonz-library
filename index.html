@@ -204,6 +204,7 @@ async function loadBooks() {
     const data = await res.json();
     if (data.books && data.books.length > 0) {
       allBooks = data.books;
+      console.log('fetch 로딩 성공:', allBooks.length + '권');
       renderStats();
       renderTable();
       return;
@@ -214,6 +215,7 @@ async function loadBooks() {
   try {
     const data = await jsonpRetry(API_URL + '?action=read');
     allBooks = data.books || [];
+    console.log('JSONP 로딩 성공:', allBooks.length + '권');
     renderStats();
     renderTable();
   } catch(e) {
@@ -225,6 +227,7 @@ async function loadBooks() {
       const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.+)\)/)[1]);
       const rows = json.table.rows;
       const cols = json.table.cols;
+      console.log('Google Sheets 직접 로딩:', rows.length + '권');
       allBooks = rows.map((r, i) => ({
         num: r.c[0]?.v || i+1,
         title: r.c[1]?.v || '',
@@ -355,7 +358,9 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-document.getElementById('search').addEventListener('input', renderTable);
+document.getElementById('search').addEventListener('input', function() { renderTable(); });
+document.getElementById('search').addEventListener('keyup', function() { renderTable(); });
+document.getElementById('search').addEventListener('change', function() { renderTable(); });
 loadBooks();
 </script>
 </body>
