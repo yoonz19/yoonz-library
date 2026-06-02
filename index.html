@@ -12,11 +12,13 @@
 body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
 
 /* HEADER */
-.header{background:var(--dark);padding:48px 24px;text-align:center;position:relative;overflow:hidden}
-.header::before{content:'';position:absolute;inset:0;background:conic-gradient(from 45deg at 20% 80%,rgba(37,99,235,0.12) 0deg,transparent 120deg),conic-gradient(from 200deg at 80% 20%,rgba(217,119,6,0.1) 0deg,transparent 120deg)}
+.header{background:var(--dark);padding:64px 24px 72px;text-align:center;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;inset:0;background:conic-gradient(from 45deg at 20% 80%,rgba(37,99,235,0.15) 0deg,transparent 120deg),conic-gradient(from 200deg at 80% 20%,rgba(217,119,6,0.12) 0deg,transparent 120deg)}
+.header::after{content:'';position:absolute;inset:0;opacity:0.3;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")}
 .header *{position:relative;z-index:1}
-.header h1{font-family:'Paperlogy',sans-serif;font-weight:900;font-size:40px;color:#fff;margin-bottom:8px}
-.header p{color:rgba(255,255,255,0.4);font-size:14px}
+.header-eyebrow{font-size:11px;font-weight:600;letter-spacing:6px;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:16px}
+.header h1{font-family:'Paperlogy',sans-serif;font-weight:900;font-size:52px;color:#fff;margin-bottom:8px;letter-spacing:-1px}
+.header p{color:rgba(255,255,255,0.35);font-size:15px;max-width:400px;margin:0 auto}
 
 /* STATS */
 .stats{display:flex;gap:12px;justify-content:center;padding:24px;flex-wrap:wrap;margin-top:-24px;position:relative;z-index:2}
@@ -89,8 +91,9 @@ body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);
 <body>
 
 <div class="header">
+  <div class="header-eyebrow">Personal Collection</div>
   <h1>Library of Yoonz</h1>
-  <p>소장 도서 & 독서 기록</p>
+  <p>읽고, 모으고, 기록하는 나만의 서재</p>
 </div>
 
 <div class="stats" id="stats"><div class="loading">불러오는 중...</div></div>
@@ -169,7 +172,7 @@ let currentFilter = 'all';
 let currentSort = {key:'num', asc:true};
 
 function jsonp(url, timeout) {
-  timeout = timeout || 20000;
+  timeout = timeout || 30000;
   return new Promise((resolve, reject) => {
     const cb = '_cb_' + Date.now() + Math.random().toString(36).slice(2);
     const timer = setTimeout(() => { cleanup(); reject(); }, timeout);
@@ -183,9 +186,16 @@ function jsonp(url, timeout) {
   });
 }
 
+async function jsonpRetry(url, retries) {
+  retries = retries || 3;
+  for (let i = 0; i < retries; i++) {
+    try { return await jsonp(url); } catch(e) { if (i === retries - 1) throw e; }
+  }
+}
+
 async function loadBooks() {
   try {
-    const data = await jsonp(API_URL + '?action=read');
+    const data = await jsonpRetry(API_URL + '?action=read');
     allBooks = data.books || [];
     renderStats();
     renderTable();
@@ -285,7 +295,7 @@ async function addBook() {
     rental: ''
   });
   try {
-    await jsonp(API_URL + '?' + params.toString());
+    await jsonpRetry(API_URL + '?' + params.toString());
     showToast('추가 완료! 시트에도 반영됩니다');
     closeModal();
     ['addTitle','addAuthor','addPublisher','addGenre','addDetail','addNote'].forEach(id => document.getElementById(id).value = '');
