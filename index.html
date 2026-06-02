@@ -194,14 +194,55 @@ async function jsonpRetry(url, retries) {
 }
 
 async function loadBooks() {
+  document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="loading">불러오는 중... (692권 로딩에 몇 초 걸려요)</td></tr>';
+
+  // 방법 1: fetch (CORS 허용 시)
+  try {
+    const res = await fetch(API_URL + '?action=read');
+    const data = await res.json();
+    if (data.books && data.books.length > 0) {
+      allBooks = data.books;
+      renderStats();
+      renderTable();
+      return;
+    }
+  } catch(e) {}
+
+  // 방법 2: JSONP 재시도
   try {
     const data = await jsonpRetry(API_URL + '?action=read');
     allBooks = data.books || [];
     renderStats();
     renderTable();
   } catch(e) {
-    document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="loading">로딩 실패 - 새로고침 해주세요</td></tr>';
-    setTimeout(loadBooks, 3000);
+    // 방법 3: Google Sheets 공개 CSV
+    try {
+      const csvUrl = 'https://docs.google.com/spreadsheets/d/1UIcf91XHP-lJaEH8ogT110iMk9AZ63yJTEGzNp7zfEI/gviz/tq?tqx=out:json';
+      const res = await fetch(csvUrl);
+      const text = await res.text();
+      const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.+)\)/)[1]);
+      const rows = json.table.rows;
+      const cols = json.table.cols;
+      allBooks = rows.map((r, i) => ({
+        num: r.c[0]?.v || i+1,
+        title: r.c[1]?.v || '',
+        author: r.c[2]?.v || '',
+        publisher: r.c[3]?.v || '',
+        genre: r.c[4]?.v || '',
+        detail: r.c[5]?.v || '',
+        owned: r.c[6]?.v || '',
+        reading: r.c[7]?.v || '',
+        date: r.c[8]?.v || '',
+        note: r.c[9]?.v || '',
+        purchase: r.c[10]?.v || '',
+        rental: r.c[11]?.v || ''
+      }));
+      renderStats();
+      renderTable();
+    } catch(e2) {
+      document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="loading">로딩 실패 - 새로고침 해주세요</td></tr>';
+      setTimeout(loadBooks, 5000);
+    }
   }
 }
 
