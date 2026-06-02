@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>윤지의 서재</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/niceplugin/paperlogy-font@1.0.0/css/paperlogy.min.css">
+<style>
+:root{--dark:#111;--bg:#F5F5F0;--card:#fff;--accent:#2563EB;--green:#16A34A;--gold:#D97706;--text:#1a1a1a;--text2:#6b7280;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+
+/* HEADER */
+.header{background:var(--dark);padding:48px 24px;text-align:center;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;inset:0;background:conic-gradient(from 45deg at 20% 80%,rgba(37,99,235,0.12) 0deg,transparent 120deg),conic-gradient(from 200deg at 80% 20%,rgba(217,119,6,0.1) 0deg,transparent 120deg)}
+.header *{position:relative;z-index:1}
+.header h1{font-family:'Paperlogy',sans-serif;font-weight:900;font-size:40px;color:#fff;margin-bottom:8px}
+.header p{color:rgba(255,255,255,0.4);font-size:14px}
+
+/* STATS */
+.stats{display:flex;gap:12px;justify-content:center;padding:24px;flex-wrap:wrap;margin-top:-24px;position:relative;z-index:2}
+.stat{background:var(--card);border-radius:var(--radius);padding:16px 24px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.06);min-width:120px}
+.stat-num{font-family:'Paperlogy',sans-serif;font-weight:800;font-size:28px;color:var(--accent)}
+.stat-num.green{color:var(--green)}
+.stat-num.gold{color:var(--gold)}
+.stat-label{font-size:11px;color:var(--text2);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+
+/* TOOLBAR */
+.toolbar{max-width:1100px;margin:24px auto 0;padding:0 20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.search-box{flex:1;min-width:200px;padding:10px 16px;border:2px solid #e5e7eb;border-radius:100px;font-size:14px;font-family:'Pretendard',sans-serif;outline:none;transition:border 0.2s}
+.search-box:focus{border-color:var(--accent)}
+.filter-btn{padding:8px 18px;border-radius:100px;border:1.5px solid #e5e7eb;background:var(--card);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:'Pretendard',sans-serif;color:var(--text2)}
+.filter-btn.active{background:var(--dark);color:#fff;border-color:var(--dark)}
+.filter-btn:hover:not(.active){border-color:var(--accent);color:var(--accent)}
+.add-btn{padding:10px 22px;border-radius:100px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Pretendard',sans-serif;transition:background 0.2s}
+.add-btn:hover{background:#1d4ed8}
+
+/* TABLE */
+.table-wrap{max-width:1100px;margin:20px auto;padding:0 20px}
+.book-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.04)}
+.book-table thead{background:#f9fafb}
+.book-table th{padding:12px 14px;text-align:left;font-size:12px;font-weight:700;color:var(--text2);letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;cursor:pointer;user-select:none;white-space:nowrap}
+.book-table th:hover{color:var(--accent)}
+.book-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid #f8f8f8;vertical-align:middle}
+.book-table tr:hover{background:#fafbff}
+.badge{display:inline-block;padding:2px 10px;border-radius:100px;font-size:11px;font-weight:600}
+.badge-yes{background:rgba(22,163,74,0.1);color:var(--green)}
+.badge-no{background:rgba(239,68,68,0.08);color:#dc2626}
+.badge-read{background:rgba(37,99,235,0.08);color:var(--accent)}
+.badge-reading{background:rgba(217,119,6,0.08);color:var(--gold)}
+.genre-tag{background:rgba(0,0,0,0.04);color:var(--text2);padding:2px 8px;border-radius:6px;font-size:11px;font-weight:500}
+.count-info{max-width:1100px;margin:0 auto;padding:12px 20px;font-size:13px;color:var(--text2)}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border-radius:16px;padding:32px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.modal h2{font-family:'Paperlogy',sans-serif;font-weight:800;font-size:22px;margin-bottom:20px}
+.modal label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin:12px 0 4px;letter-spacing:0.5px;text-transform:uppercase}
+.modal input,.modal select{width:100%;padding:10px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:'Pretendard',sans-serif;outline:none;transition:border 0.2s}
+.modal input:focus,.modal select:focus{border-color:var(--accent)}
+.modal-row{display:flex;gap:12px}
+.modal-row>*{flex:1}
+.modal-btns{display:flex;gap:10px;margin-top:24px}
+.modal-btns .btn{flex:1;padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:'Pretendard',sans-serif}
+.btn-save{background:var(--accent);color:#fff}
+.btn-cancel{background:#f3f4f6;color:var(--text2)}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--dark);color:#fff;padding:14px 28px;border-radius:100px;font-size:14px;transition:transform 0.3s;z-index:200;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.loading{text-align:center;padding:60px;color:var(--text2);font-size:15px}
+
+.footer{background:var(--dark);padding:32px 24px;text-align:center;margin-top:60px}
+.footer-text{font-size:13px;color:rgba(255,255,255,0.2)}
+
+@media(max-width:768px){
+  .header h1{font-size:28px}
+  .stats{gap:8px;padding:16px}
+  .stat{padding:12px 16px;min-width:90px}
+  .stat-num{font-size:22px}
+  .toolbar{flex-direction:column}
+  .search-box{width:100%}
+  .book-table{font-size:12px;display:block;overflow-x:auto}
+  .book-table th,.book-table td{padding:8px 10px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>윤지의 서재</h1>
+  <p>소장 도서 & 독서 기록</p>
+</div>
+
+<div class="stats" id="stats"><div class="loading">불러오는 중...</div></div>
+
+<div class="toolbar">
+  <input type="text" class="search-box" id="search" placeholder="도서명, 저자, 출판사 검색...">
+  <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">전체</button>
+  <button class="filter-btn" data-filter="owned" onclick="setFilter('owned')">소장</button>
+  <button class="filter-btn" data-filter="read" onclick="setFilter('read')">완독</button>
+  <button class="filter-btn" data-filter="unread" onclick="setFilter('unread')">미독</button>
+  <button class="add-btn" onclick="openModal()">+ 책 추가</button>
+</div>
+
+<div class="count-info" id="countInfo"></div>
+
+<div class="table-wrap">
+  <table class="book-table">
+    <thead>
+      <tr>
+        <th onclick="sortBy('num')">#</th>
+        <th onclick="sortBy('title')">도서</th>
+        <th onclick="sortBy('author')">저자</th>
+        <th onclick="sortBy('publisher')">출판사</th>
+        <th onclick="sortBy('genre')">장르</th>
+        <th onclick="sortBy('owned')">소장</th>
+        <th onclick="sortBy('reading')">독서</th>
+        <th onclick="sortBy('date')">날짜</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <tr><td colspan="8" class="loading">불러오는 중...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>책 추가하기</h2>
+    <label>도서명 *</label>
+    <input type="text" id="addTitle" placeholder="책 제목">
+    <label>저자</label>
+    <input type="text" id="addAuthor" placeholder="저자명">
+    <label>출판사</label>
+    <input type="text" id="addPublisher" placeholder="출판사">
+    <div class="modal-row">
+      <div><label>장르</label><input type="text" id="addGenre" placeholder="소설, 에세이..."></div>
+      <div><label>상세</label><input type="text" id="addDetail" placeholder="영미, 일본..."></div>
+    </div>
+    <div class="modal-row">
+      <div><label>소장여부</label><select id="addOwned"><option value="Y">Y</option><option value="N">N</option></select></div>
+      <div><label>독서</label><select id="addReading"><option value="">-</option><option value="완독">완독</option><option value="독서중">독서중</option></select></div>
+    </div>
+    <div class="modal-row">
+      <div><label>날짜</label><input type="date" id="addDate"></div>
+      <div><label>특이사항</label><input type="text" id="addNote" placeholder="메모"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn btn-save" onclick="addBook()">추가</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer class="footer">
+  <div class="footer-text">윤지의 서재 &middot; Google Sheets 연동</div>
+</footer>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbyjPdlXHjdDfitgK4HOrO_StsuSo69H7kug0IGDkh0FXu7N1wN0RlZoRGMZUCUbmamF/exec';
+
+let allBooks = [];
+let currentFilter = 'all';
+let currentSort = {key:'num', asc:true};
+
+function jsonp(url, timeout) {
+  timeout = timeout || 20000;
+  return new Promise((resolve, reject) => {
+    const cb = '_cb_' + Date.now() + Math.random().toString(36).slice(2);
+    const timer = setTimeout(() => { cleanup(); reject(); }, timeout);
+    function cleanup() { clearTimeout(timer); delete window[cb]; document.getElementById(cb)?.remove(); }
+    window[cb] = function(data) { cleanup(); resolve(data); };
+    const script = document.createElement('script');
+    script.id = cb;
+    script.src = url + '&callback=' + cb + '&_t=' + Date.now();
+    script.onerror = () => { cleanup(); reject(); };
+    document.body.appendChild(script);
+  });
+}
+
+async function loadBooks() {
+  try {
+    const data = await jsonp(API_URL + '?action=read');
+    allBooks = data.books || [];
+    renderStats();
+    renderTable();
+  } catch(e) {
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="loading">로딩 실패 - 새로고침 해주세요</td></tr>';
+    setTimeout(loadBooks, 3000);
+  }
+}
+
+function renderStats() {
+  const total = allBooks.length;
+  const owned = allBooks.filter(b => b.owned === 'Y').length;
+  const read = allBooks.filter(b => b.reading === '완독').length;
+  const genres = [...new Set(allBooks.map(b => b.genre).filter(Boolean))].length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-num">${total}</div><div class="stat-label">전체 도서</div></div>
+    <div class="stat"><div class="stat-num green">${owned}</div><div class="stat-label">소장</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--accent)">${read}</div><div class="stat-label">완독</div></div>
+    <div class="stat"><div class="stat-num gold">${genres}</div><div class="stat-label">장르</div></div>
+    <div class="stat"><div class="stat-num" style="color:#8b5cf6">${Math.round(read/total*100)||0}%</div><div class="stat-label">완독률</div></div>
+  `;
+}
+
+function getFiltered() {
+  const q = document.getElementById('search').value.toLowerCase();
+  let list = allBooks;
+  if (currentFilter === 'owned') list = list.filter(b => b.owned === 'Y');
+  else if (currentFilter === 'read') list = list.filter(b => b.reading === '완독');
+  else if (currentFilter === 'unread') list = list.filter(b => !b.reading);
+  if (q) list = list.filter(b => (b.title||'').toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q) || (b.publisher||'').toLowerCase().includes(q));
+  const {key, asc} = currentSort;
+  list.sort((a,b) => {
+    let va = a[key]||'', vb = b[key]||'';
+    if (key === 'num') { va = parseInt(va)||0; vb = parseInt(vb)||0; }
+    if (va < vb) return asc ? -1 : 1;
+    if (va > vb) return asc ? 1 : -1;
+    return 0;
+  });
+  return list;
+}
+
+function renderTable() {
+  const list = getFiltered();
+  document.getElementById('countInfo').textContent = `총 ${list.length}권 표시 중`;
+  if (list.length === 0) {
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="loading">결과 없음</td></tr>';
+    return;
+  }
+  document.getElementById('tableBody').innerHTML = list.map(b => `<tr>
+    <td>${b.num||''}</td>
+    <td><strong>${b.title||''}</strong></td>
+    <td>${b.author||''}</td>
+    <td style="font-size:12px;color:var(--text2)">${b.publisher||''}</td>
+    <td><span class="genre-tag">${b.genre||''}</span></td>
+    <td>${b.owned==='Y'?'<span class="badge badge-yes">Y</span>':b.owned==='N'?'<span class="badge badge-no">N</span>':''}</td>
+    <td>${b.reading==='완독'?'<span class="badge badge-read">완독</span>':b.reading==='독서중'?'<span class="badge badge-reading">독서중</span>':''}</td>
+    <td style="font-size:12px;color:var(--text2)">${formatDate(b.date)}</td>
+  </tr>`).join('');
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  if (typeof d === 'string' && d.includes('T')) return d.split('T')[0];
+  return String(d);
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  renderTable();
+}
+
+function sortBy(key) {
+  if (currentSort.key === key) currentSort.asc = !currentSort.asc;
+  else { currentSort.key = key; currentSort.asc = true; }
+  renderTable();
+}
+
+function openModal() { document.getElementById('modal').classList.add('show'); }
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+async function addBook() {
+  const title = document.getElementById('addTitle').value.trim();
+  if (!title) { showToast('도서명을 입력하세요'); return; }
+  const params = new URLSearchParams({
+    action: 'add',
+    title: title,
+    author: document.getElementById('addAuthor').value.trim(),
+    publisher: document.getElementById('addPublisher').value.trim(),
+    genre: document.getElementById('addGenre').value.trim(),
+    detail: document.getElementById('addDetail').value.trim(),
+    owned: document.getElementById('addOwned').value,
+    reading: document.getElementById('addReading').value,
+    date: document.getElementById('addDate').value,
+    note: document.getElementById('addNote').value.trim(),
+    purchase: '',
+    rental: ''
+  });
+  try {
+    await jsonp(API_URL + '?' + params.toString());
+    showToast('추가 완료! 시트에도 반영됩니다');
+    closeModal();
+    ['addTitle','addAuthor','addPublisher','addGenre','addDetail','addNote'].forEach(id => document.getElementById(id).value = '');
+    setTimeout(loadBooks, 1000);
+  } catch(e) { showToast('추가 실패 - 다시 시도해주세요'); }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+document.getElementById('search').addEventListener('input', renderTable);
+loadBooks();
+</script>
+</body>
+</html>
