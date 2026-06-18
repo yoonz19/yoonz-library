@@ -42,9 +42,18 @@ body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);
 .table-wrap{max-width:1400px;margin:20px auto;padding:0 20px;overflow-x:auto}
 .book-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.04)}
 .book-table thead{background:#f9fafb}
-.book-table th{padding:12px 14px;text-align:left;font-size:12px;font-weight:700;color:var(--text2);letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;cursor:pointer;user-select:none;white-space:nowrap}
+.book-table th{padding:10px 10px;text-align:left;font-size:12px;font-weight:700;color:var(--text2);letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;cursor:pointer;user-select:none;white-space:nowrap}
 .book-table th:hover{color:var(--accent)}
-.book-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid #f8f8f8;vertical-align:middle;white-space:nowrap}
+.book-table td{padding:9px 10px;font-size:13px;border-bottom:1px solid #f8f8f8;vertical-align:middle;white-space:nowrap}
+/* 12개 컬럼이 화면 안에 들어오도록 폭 상한 + 말줄임(…). 잘린 내용은 마우스 오버 시 title로 표시 */
+.book-table th,.book-table td{max-width:130px;overflow:hidden;text-overflow:ellipsis}
+.book-table th:nth-child(1),.book-table td:nth-child(1){max-width:46px}    /* # */
+.book-table th:nth-child(2),.book-table td:nth-child(2){max-width:190px}   /* 도서 */
+.book-table th:nth-child(3),.book-table td:nth-child(3){max-width:110px}   /* 저자 */
+.book-table th:nth-child(4),.book-table td:nth-child(4){max-width:140px}   /* 출판사 */
+.book-table th:nth-child(7),.book-table td:nth-child(7){max-width:54px}    /* 소장 */
+.book-table th:nth-child(8),.book-table td:nth-child(8){max-width:64px}    /* 독서 */
+.book-table th:nth-child(9),.book-table td:nth-child(9){max-width:92px}    /* 날짜 */
 .book-table tr:hover{background:#fafbff}
 .badge{display:inline-block;padding:2px 10px;border-radius:100px;font-size:11px;font-weight:600;white-space:nowrap}
 .badge-yes{background:rgba(22,163,74,0.1);color:var(--green)}
@@ -339,19 +348,20 @@ function renderTable() {
     document.getElementById('tableBody').innerHTML = '<tr><td colspan="12" class="loading">결과 없음</td></tr>';
     return;
   }
+  const esc = s => String(s||'').replace(/"/g,'&quot;');
   document.getElementById('tableBody').innerHTML = list.map(b => `<tr onclick="openEdit(${b.num})" style="cursor:pointer">
     <td>${b.num||''}</td>
-    <td><strong>${b.title||''}</strong></td>
-    <td>${b.author||''}</td>
-    <td style="font-size:12px;color:var(--text2)">${b.publisher||''}</td>
-    <td><span class="genre-tag">${b.genre||''}</span></td>
-    <td><span class="genre-tag">${b.detail||''}</span></td>
+    <td title="${esc(b.title)}"><strong>${b.title||''}</strong></td>
+    <td title="${esc(b.author)}">${b.author||''}</td>
+    <td title="${esc(b.publisher)}" style="font-size:12px;color:var(--text2)">${b.publisher||''}</td>
+    <td title="${esc(b.genre)}"><span class="genre-tag">${b.genre||''}</span></td>
+    <td title="${esc(b.detail)}"><span class="genre-tag">${b.detail||''}</span></td>
     <td>${b.owned==='Y'?'<span class="badge badge-yes">Y</span>':b.owned==='N'?'<span class="badge badge-no">N</span>':''}</td>
     <td>${b.reading==='완독'?'<span class="badge badge-read">완독</span>':b.reading==='독서중'?'<span class="badge badge-reading">독서중</span>':''}</td>
     <td style="font-size:12px;color:var(--text2)">${formatDate(b.date)}</td>
-    <td style="font-size:12px;color:var(--text2)">${b.note||''}</td>
-    <td style="font-size:12px;color:var(--text2)">${b.purchase||''}</td>
-    <td style="font-size:12px;color:var(--text2)">${b.rental||''}</td>
+    <td title="${esc(b.note)}" style="font-size:12px;color:var(--text2)">${b.note||''}</td>
+    <td title="${esc(b.purchase)}" style="font-size:12px;color:var(--text2)">${b.purchase||''}</td>
+    <td title="${esc(b.rental)}" style="font-size:12px;color:var(--text2)">${b.rental||''}</td>
   </tr>`).join('');
 }
 
