@@ -241,6 +241,16 @@ async function jsonpRetry(url, retries) {
   }
 }
 
+// 쓰기(추가/수정/삭제)용: fetch(CORS) 우선, 실패 시 JSONP 폴백 → 일시 장애/JSONP 차단에 견고
+async function apiWrite(url) {
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data && (data.status === 'ok' || data.num !== undefined)) return data;
+  } catch(e) {}
+  return await jsonpRetry(url);
+}
+
 async function loadBooks() {
   document.getElementById('tableBody').innerHTML = '<tr><td colspan="12" class="loading">불러오는 중... (692권 로딩에 몇 초 걸려요)</td></tr>';
 
@@ -427,7 +437,7 @@ async function addBook() {
     rental: ''
   });
   try {
-    await jsonpRetry(API_URL + '?' + params.toString());
+    await apiWrite(API_URL + '?' + params.toString());
     showToast('추가 완료! 시트에도 반영됩니다');
     closeModal();
     ['addTitle','addAuthor','addPublisher','addGenre','addDetail','addNote'].forEach(id => document.getElementById(id).value = '');
@@ -474,7 +484,7 @@ async function updateBook() {
     rental: document.getElementById('editRental').value
   });
   try {
-    await jsonpRetry(API_URL + '?' + params.toString());
+    await apiWrite(API_URL + '?' + params.toString());
     showToast('수정 완료!');
     closeEditModal();
     setTimeout(loadBooks, 1000);
@@ -486,7 +496,7 @@ async function deleteBook() {
   if (!confirm('정말 삭제하시겠어요?')) return;
   var params = new URLSearchParams({ action: 'delete', row: row });
   try {
-    await jsonpRetry(API_URL + '?' + params.toString());
+    await apiWrite(API_URL + '?' + params.toString());
     showToast('삭제 완료!');
     closeEditModal();
     setTimeout(loadBooks, 1000);
