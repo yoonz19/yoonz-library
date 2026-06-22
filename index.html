@@ -175,12 +175,6 @@ body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <h2>책 추가하기</h2>
-    <label>알라딘/교보 링크로 자동 입력</label>
-    <div style="display:flex;gap:8px">
-      <input type="text" id="addUrl" placeholder="알라딘 또는 교보문고 URL 붙여넣기" style="flex:1">
-      <button class="btn btn-save" onclick="fetchBookInfo()" style="flex-shrink:0;padding:10px 16px;font-size:13px" id="fetchBtn">가져오기</button>
-    </div>
-    <div style="height:12px"></div>
     <label>도서명 *</label>
     <input type="text" id="addTitle" placeholder="책 제목">
     <label>저자</label>
@@ -198,6 +192,10 @@ body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);
     <div class="modal-row">
       <div><label>날짜</label><input type="date" id="addDate"></div>
       <div><label>특이사항</label><input type="text" id="addNote" placeholder="메모"></div>
+    </div>
+    <div class="modal-row">
+      <div><label>구매/구독</label><input type="text" id="addPurchase" placeholder="밀리, 전자도서관..."></div>
+      <div><label>대여</label><input type="text" id="addRental" placeholder="대여 메모"></div>
     </div>
     <div class="modal-btns">
       <button class="btn btn-cancel" onclick="closeModal()">취소</button>
@@ -396,29 +394,6 @@ function sortBy(key) {
 function openModal() { document.getElementById('modal').classList.add('show'); }
 function closeModal() { document.getElementById('modal').classList.remove('show'); }
 
-async function fetchBookInfo() {
-  var url = document.getElementById('addUrl').value.trim();
-  if (!url) { showToast('URL을 입력하세요'); return; }
-  var btn = document.getElementById('fetchBtn');
-  btn.textContent = '가져오는 중...';
-  btn.disabled = true;
-  try {
-    var params = new URLSearchParams({action:'fetch', url:url});
-    var data = await jsonpRetry(API_URL + '?' + params.toString());
-    if (data.status === 'ok') {
-      if (data.title) document.getElementById('addTitle').value = data.title;
-      if (data.author) document.getElementById('addAuthor').value = data.author;
-      if (data.publisher) document.getElementById('addPublisher').value = data.publisher;
-      if (data.genre) document.getElementById('addGenre').value = data.genre;
-      showToast('정보를 가져왔습니다!');
-    } else {
-      showToast('정보를 가져오지 못했습니다');
-    }
-  } catch(e) { showToast('오류 발생 - 다시 시도해주세요'); }
-  btn.textContent = '가져오기';
-  btn.disabled = false;
-}
-
 async function addBook() {
   const title = document.getElementById('addTitle').value.trim();
   if (!title) { showToast('도서명을 입력하세요'); return; }
@@ -433,14 +408,14 @@ async function addBook() {
     reading: document.getElementById('addReading').value,
     date: document.getElementById('addDate').value,
     note: document.getElementById('addNote').value.trim(),
-    purchase: '',
-    rental: ''
+    purchase: document.getElementById('addPurchase').value.trim(),
+    rental: document.getElementById('addRental').value.trim()
   });
   try {
     await apiWrite(API_URL + '?' + params.toString());
     showToast('추가 완료! 시트에도 반영됩니다');
     closeModal();
-    ['addTitle','addAuthor','addPublisher','addGenre','addDetail','addNote'].forEach(id => document.getElementById(id).value = '');
+    ['addTitle','addAuthor','addPublisher','addGenre','addDetail','addNote','addPurchase','addRental'].forEach(id => document.getElementById(id).value = '');
     setTimeout(loadBooks, 1000);
   } catch(e) { showToast('추가 실패 - 다시 시도해주세요'); }
 }
