@@ -346,21 +346,23 @@ function renderStats() {
   `;
 }
 
+function searchNorm(s){ return String(s==null?'':s).normalize('NFC').toLowerCase().replace(/\s+/g,' ').trim(); }
+
 function getFiltered() {
   var searchEl = document.getElementById('search');
-  var q = searchEl ? searchEl.value.toLowerCase().trim() : '';
+  var q = searchEl ? searchNorm(searchEl.value) : '';
   var list = allBooks.slice();
   if (currentFilter === 'owned') list = list.filter(function(b){ return b.owned === 'Y'; });
   else if (currentFilter === 'read') list = list.filter(function(b){ return b.reading === '완독'; });
   else if (currentFilter === 'unread') list = list.filter(function(b){ return !b.reading; });
   if (q) {
     list = list.filter(function(b){
-      return String(b.title||'').toLowerCase().indexOf(q) !== -1 ||
-             String(b.author||'').toLowerCase().indexOf(q) !== -1 ||
-             String(b.publisher||'').toLowerCase().indexOf(q) !== -1 ||
-             String(b.note||'').toLowerCase().indexOf(q) !== -1 ||
-             String(b.purchase||'').toLowerCase().indexOf(q) !== -1 ||
-             String(b.rental||'').toLowerCase().indexOf(q) !== -1;
+      return searchNorm(b.title).indexOf(q) !== -1 ||
+             searchNorm(b.author).indexOf(q) !== -1 ||
+             searchNorm(b.publisher).indexOf(q) !== -1 ||
+             searchNorm(b.note).indexOf(q) !== -1 ||
+             searchNorm(b.purchase).indexOf(q) !== -1 ||
+             searchNorm(b.rental).indexOf(q) !== -1;
     });
   }
   var key = currentSort.key;
