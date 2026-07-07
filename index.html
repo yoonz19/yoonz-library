@@ -239,6 +239,7 @@ body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);
 const API_URL = 'https://script.google.com/macros/s/AKfycbyds5p8rDW330LeLTG2fzEK2lJvkoK97hLz9-8RcoFVRmds4miNMTfJqdScni8UZ3Dw/exec';
 
 let allBooks = [];
+let allQuotes = [];
 let currentFilter = 'all';
 let currentSort = {key:'num', asc:true};
 let currentQuoteNum = null;
@@ -320,8 +321,7 @@ async function loadBooks() {
         date: r.c[8]?.v || '',
         note: r.c[9]?.v || '',
         purchase: r.c[10]?.v || '',
-        rental: r.c[11]?.v || '',
-        quotes: r.c[12]?.v || ''
+        rental: r.c[11]?.v || ''
       }));
       renderStats();
       renderTable();
@@ -385,7 +385,7 @@ function renderTable() {
   }
   const esc = s => String(s||'').replace(/"/g,'&quot;');
   document.getElementById('tableBody').innerHTML = list.map(b => {
-    const qc = getQuotes(b).length;
+    const qc = getQuotesFor(b.num).length;
     const quoteCell = qc > 0
       ? `<span class="quote-btn">${qc}개</span>`
       : `<span class="quote-btn add">+ 추가</span>`;
@@ -512,15 +512,23 @@ async function deleteBook() {
   } catch(e) { showToast('삭제 실패 - 다시 시도해주세요'); }
 }
 
-// ===== 문장수집 =====
-function getQuotes(b) {
+// ===== 문장수집 (별도 "문장수집" 시트에 한 줄씩 저장) =====
+async function loadQuotes() {
   try {
-    var raw = b && b.quotes;
-    if (!raw) return [];
-    if (Array.isArray(raw)) return raw;
-    var arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr : [];
-  } catch(e) { return []; }
+    const res = await fetch(API_URL + '?action=readQuotes');
+    const data = await res.json();
+    if (data.quotes) { allQuotes = data.quotes; renderTable(); if (currentQuoteNum!=null) renderQuoteList(); return; }
+  } catch(e) {}
+  try {
+    const data = await jsonpRetry(API_URL + '?action=readQuotes');
+    allQuotes = data.quotes || [];
+    renderTable();
+    if (currentQuoteNum!=null) renderQuoteList();
+  } catch(e) {}
+}
+
+function getQuotesFor(num) {
+  return allQuotes.filter(function(q){ return parseInt(q.bookNum) === parseInt(num); });
 }
 
 function escapeHtml(s) {
@@ -542,29 +550,23 @@ function openQuotes(num) {
 function closeQuotes() { document.getElementById('quoteModal').classList.remove('show'); currentQuoteNum = null; }
 
 function renderQuoteList() {
-  var book = allBooks.find(function(b){ return parseInt(b.num) === currentQuoteNum; });
-  var quotes = book ? getQuotes(book) : [];
+  var quotes = getQuotesFor(currentQuoteNum);
   var el = document.getElementById('quoteList');
   if (!quotes.length) {
     el.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:6px 0 16px">아직 수집한 문장이 없어요. 아래에 첫 문장을 추가해보세요.</div>';
     return;
   }
   el.innerHTML = '<div style="font-size:12px;color:var(--text2);margin-bottom:8px">수집 문장 ' + quotes.length + '개</div>' +
-    quotes.map(function(q, i){
-      var page = q.p ? '<span style="display:block;font-size:12px;color:var(--text2);margin-top:5px">p.' + escapeHtml(q.p) + '</span>' : '';
+    quotes.map(function(q){
+      var meta = [];
+      if (q.page) meta.push('p.' + escapeHtml(q.page));
+      if (q.date) meta.push(escapeHtml(q.date));
+      var metaHtml = meta.length ? '<span style="display:block;font-size:12px;color:var(--text2);margin-top:5px">' + meta.join(' · ') + '</span>' : '';
       return '<div class="quote-item">' +
-        '<div style="flex:1;font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word">' + escapeHtml(q.t||'') + page + '</div>' +
-        '<button onclick="deleteQuote(' + i + ')" style="border:none;background:none;color:#dc2626;cursor:pointer;font-size:12px;padding:2px 4px;flex-shrink:0">삭제</button>' +
+        '<div style="flex:1;font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word">' + escapeHtml(q.quote||'') + metaHtml + '</div>' +
+        '<button onclick="deleteQuote(\'' + String(q.id) + '\')" style="border:none;background:none;color:#dc2626;cursor:pointer;font-size:12px;padding:2px 4px;flex-shrink:0">삭제</button>' +
       '</div>';
     }).join('');
-}
-
-async function saveQuotes(quotes) {
-  var row = document.getElementById('quoteRow').value;
-  var book = allBooks.find(function(b){ return parseInt(b.num) === parseInt(row); });
-  if (book) book.quotes = JSON.stringify(quotes);
-  var params = new URLSearchParams({ action: 'update', row: row, quotes: JSON.stringify(quotes) });
-  await apiWrite(API_URL + '?' + params.toString());
 }
 
 async function addQuote() {
@@ -572,12 +574,18 @@ async function addQuote() {
   if (!text) { showToast('문장을 입력하세요'); return; }
   var page = document.getElementById('quotePage').value.trim();
   var book = allBooks.find(function(b){ return parseInt(b.num) === currentQuoteNum; });
-  var quotes = book ? getQuotes(book) : [];
-  var item = { t: text };
-  if (page) item.p = page;
-  quotes.push(item);
+  if (!book) return;
+  var params = new URLSearchParams({
+    action: 'addQuote',
+    bookNum: currentQuoteNum,
+    title: book.title || '',
+    author: book.author || '',
+    quote: text,
+    page: page
+  });
   try {
-    await saveQuotes(quotes);
+    var res = await apiWrite(API_URL + '?' + params.toString());
+    allQuotes.push({ id: res && res.id, bookNum: currentQuoteNum, title: book.title||'', author: book.author||'', quote: text, page: page, date: (res && res.date) || '' });
     document.getElementById('quoteInput').value = '';
     document.getElementById('quotePage').value = '';
     renderQuoteList();
@@ -586,13 +594,11 @@ async function addQuote() {
   } catch(e) { showToast('저장 실패 - 다시 시도해주세요'); }
 }
 
-async function deleteQuote(index) {
-  var book = allBooks.find(function(b){ return parseInt(b.num) === currentQuoteNum; });
-  if (!book) return;
-  var quotes = getQuotes(book);
-  quotes.splice(index, 1);
+async function deleteQuote(id) {
+  var params = new URLSearchParams({ action: 'deleteQuote', id: id });
   try {
-    await saveQuotes(quotes);
+    await apiWrite(API_URL + '?' + params.toString());
+    allQuotes = allQuotes.filter(function(q){ return String(q.id) !== String(id); });
     renderQuoteList();
     renderTable();
     showToast('삭제 완료!');
@@ -603,6 +609,7 @@ document.getElementById('search').addEventListener('input', function() { renderT
 document.getElementById('search').addEventListener('keyup', function() { renderTable(); });
 document.getElementById('search').addEventListener('change', function() { renderTable(); });
 loadBooks();
+loadQuotes();
 </script>
 </body>
 </html>
