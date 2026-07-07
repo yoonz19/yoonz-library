@@ -564,7 +564,14 @@ function openQuotes(num) {
 function closeQuotes() { document.getElementById('quoteModal').classList.remove('show'); currentQuoteNum = null; }
 
 function renderQuoteList() {
-  var quotes = getQuotesFor(currentQuoteNum);
+  var quotes = getQuotesFor(currentQuoteNum).slice().sort(function(a, b){
+    var pa = parseInt(a.page, 10), pb = parseInt(b.page, 10);
+    var na = isNaN(pa), nb = isNaN(pb);
+    if (na && nb) return 0;
+    if (na) return 1;   // 페이지 없는 문장은 맨 뒤로
+    if (nb) return -1;
+    return pa - pb;     // 페이지 오름차순
+  });
   var el = document.getElementById('quoteList');
   if (!quotes.length) {
     el.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:6px 0 16px">아직 수집한 문장이 없어요. 아래에 첫 문장을 추가해보세요.</div>';
