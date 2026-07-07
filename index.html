@@ -531,6 +531,18 @@ function getQuotesFor(num) {
   return allQuotes.filter(function(q){ return parseInt(q.bookNum) === parseInt(num); });
 }
 
+function fmtQuoteDate(d) {
+  if (!d) return '';
+  if (typeof d === 'string' && d.indexOf('T') !== -1) {
+    var dt = new Date(d);
+    if (!isNaN(dt.getTime())) {
+      return dt.getFullYear() + '-' + ('0'+(dt.getMonth()+1)).slice(-2) + '-' + ('0'+dt.getDate()).slice(-2);
+    }
+    return d.split('T')[0];
+  }
+  return String(d);
+}
+
 function escapeHtml(s) {
   return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -560,7 +572,7 @@ function renderQuoteList() {
     quotes.map(function(q){
       var meta = [];
       if (q.page) meta.push('p.' + escapeHtml(q.page));
-      if (q.date) meta.push(escapeHtml(q.date));
+      if (q.date) meta.push(escapeHtml(fmtQuoteDate(q.date)));
       var metaHtml = meta.length ? '<span style="display:block;font-size:12px;color:var(--text2);margin-top:5px">' + meta.join(' · ') + '</span>' : '';
       return '<div class="quote-item">' +
         '<div style="flex:1;font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word">' + escapeHtml(q.quote||'') + metaHtml + '</div>' +
