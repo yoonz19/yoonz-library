@@ -243,6 +243,7 @@ let allQuotes = [];
 let currentFilter = 'all';
 let currentSort = {key:'num', asc:true};
 let currentQuoteNum = null;
+let editingQuoteId = null;
 
 function jsonp(url, timeout) {
   timeout = timeout || 30000;
@@ -553,6 +554,7 @@ function openQuotes(num) {
   var book = allBooks.find(function(b){ return parseInt(b.num) === num; });
   if (!book) return;
   currentQuoteNum = num;
+  editingQuoteId = null;
   document.getElementById('quoteRow').value = num;
   document.getElementById('quoteBookTitle').textContent = book.title || '문장수집';
   document.getElementById('quoteBookMeta').textContent = [book.author, book.publisher].filter(Boolean).join(' · ');
@@ -561,7 +563,7 @@ function openQuotes(num) {
   renderQuoteList();
   document.getElementById('quoteModal').classList.add('show');
 }
-function closeQuotes() { document.getElementById('quoteModal').classList.remove('show'); currentQuoteNum = null; }
+function closeQuotes() { document.getElementById('quoteModal').classList.remove('show'); currentQuoteNum = null; editingQuoteId = null; }
 
 function renderQuoteList() {
   var quotes = getQuotesFor(currentQuoteNum).slice().sort(function(a, b){
@@ -579,15 +581,52 @@ function renderQuoteList() {
   }
   el.innerHTML = '<div style="font-size:12px;color:var(--text2);margin-bottom:8px">수집 문장 ' + quotes.length + '개</div>' +
     quotes.map(function(q){
+      if (String(q.id) === String(editingQuoteId)) {
+        var pageVal = escapeHtml(q.page==null?'':q.page).replace(/"/g,'&quot;');
+        return '<div class="quote-item" style="flex-direction:column;align-items:stretch;gap:8px">' +
+          '<textarea id="editQuoteText" style="width:100%;min-height:70px;padding:10px 12px;border:2px solid var(--accent);border-radius:10px;font-size:14px;font-family:\'Pretendard\',sans-serif;outline:none;resize:vertical">' + escapeHtml(q.quote||'') + '</textarea>' +
+          '<div style="display:flex;gap:8px;align-items:center">' +
+            '<input type="text" id="editQuotePage" value="' + pageVal + '" placeholder="페이지" style="width:120px;padding:8px 10px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:\'Pretendard\',sans-serif;outline:none">' +
+            '<div style="flex:1"></div>' +
+            '<button onclick="cancelEditQuote()" style="border:1px solid #e5e7eb;background:#fff;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer">취소</button>' +
+            '<button onclick="saveEditQuote(\'' + String(q.id) + '\')" style="border:none;background:var(--accent);color:#fff;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer">저장</button>' +
+          '</div>' +
+        '</div>';
+      }
       var meta = [];
       if (q.page) meta.push('p.' + escapeHtml(q.page));
       if (q.date) meta.push(escapeHtml(fmtQuoteDate(q.date)));
       var metaHtml = meta.length ? '<span style="display:block;font-size:12px;color:var(--text2);margin-top:5px">' + meta.join(' · ') + '</span>' : '';
       return '<div class="quote-item">' +
         '<div style="flex:1;font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word">' + escapeHtml(q.quote||'') + metaHtml + '</div>' +
-        '<button onclick="deleteQuote(\'' + String(q.id) + '\')" style="border:none;background:none;color:#dc2626;cursor:pointer;font-size:12px;padding:2px 4px;flex-shrink:0">삭제</button>' +
+        '<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">' +
+          '<button onclick="startEditQuote(\'' + String(q.id) + '\')" style="border:none;background:none;color:var(--accent);cursor:pointer;font-size:12px;padding:2px 4px">수정</button>' +
+          '<button onclick="deleteQuote(\'' + String(q.id) + '\')" style="border:none;background:none;color:#dc2626;cursor:pointer;font-size:12px;padding:2px 4px">삭제</button>' +
+        '</div>' +
       '</div>';
     }).join('');
+  var ta = document.getElementById('editQuoteText');
+  if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+}
+
+function startEditQuote(id) { editingQuoteId = id; renderQuoteList(); }
+function cancelEditQuote() { editingQuoteId = null; renderQuoteList(); }
+
+async function saveEditQuote(id) {
+  var text = document.getElementById('editQuoteText').value.trim();
+  if (!text) { showToast('문장을 입력하세요'); return; }
+  var page = document.getElementById('editQuotePage').value.trim();
+  var params = new URLSearchParams({ action: 'updateQuote', id: id, quote: text, page: page });
+  try {
+    var res = await apiWrite(API_URL + '?' + params.toString());
+    if (!res || res.status !== 'ok') throw new Error('저장 미확인');
+    var q = allQuotes.find(function(x){ return String(x.id) === String(id); });
+    if (q) { q.quote = text; q.page = page; }
+    editingQuoteId = null;
+    renderQuoteList();
+    renderTable();
+    showToast('수정 완료!');
+  } catch(e) { showToast('수정 실패 - 다시 시도해주세요'); }
 }
 
 async function addQuote() {
